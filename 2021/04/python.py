@@ -34,11 +34,8 @@ class BingoBoard(object):
 
     def won(self) -> bool:
         """Determine if the game has been won."""
-        for x in range(5):
-            if np.all(self._won[x,:]):
-                return True
-        for y in range(5):
-            if np.all(self._won[:,y]):
+        for i, val in enumerate(self._cells.shape):
+            if val in self._won.sum(axis=i):
                 return True
         return False
 
