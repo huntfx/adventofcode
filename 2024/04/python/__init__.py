@@ -1,13 +1,9 @@
-"""Day 3: Mull It Over
-https://adventofcode.com/2024/day/3
+"""Day 4: Ceres Search
+https://adventofcode.com/2024/day/4
 """
 
-import logging
 import numpy as np
 from typing import Iterator
-
-
-logger = logging.getLogger()
 
 
 def read_input(test: bool = False) -> Iterator[str]:
@@ -26,63 +22,70 @@ def load_array(test: bool) -> np.ndarray:
     return np.array(list(map(list, read_input(test))))
 
 
+def wordsearch(arr: np.ndarray, search: str) -> int:
+    """Search an array for a word.
+    All directions are supported.
+
+    Parameters:
+        arr: 2D character array.
+        search: Case sensitive word to search for.
+
+    Returns:
+        The number of matches found.
+    """
+    matches = 0
+
+    for rot in range(4):
+        arr_rot = np.rot90(arr, rot)
+        height, width = arr_rot.shape
+        for x in range(3, width):
+            for y in range(height):
+                # Search to the left
+                matches += all(arr_rot[y][x - i] == c for i, c in enumerate(search))
+
+                # Search diagonal to the top left
+                if y >= 3:
+                    matches += all(arr_rot[y - i][x - i] == c for i, c in enumerate(search))
+    return matches
+
+
+def xsearch(arr: np.ndarray, search: str) -> int:
+    """Search an array for an X word.
+
+    Parameters:
+        arr: 2D character array.
+        search: 3 letter word to search that crosses in the middle.
+            For example, MAS will search for:
+                M.S
+                .A.
+                M.S
+
+    Returns:
+        The number of matches found.
+    """
+    try:
+        left, middle, right = search
+    except ValueError:
+        raise ValueError('search must be exactly 3 characters')
+
+    matches = 0
+    for y, x in zip(*np.where(arr[1:-1,1:-1] == middle)):
+        matches += {arr[y][x], arr[y+2][x+2]} == {arr[y+2][x], arr[y][x+2]} == {left, right}
+    return matches
+
+
 def part_1(test: bool = False) -> int:
     """Count the occurances of XMAS in the word search.
 
     This word search allows words to be horizontal, vertical, diagonal,
     written backwards, or even overlapping other words.
     """
-    search = list('XMAS')
-
-    arr = load_array(test)
-    height, width = arr.shape
-    matches = 0
-    for x in range(3, width):
-        for y in range(height):
-            if [arr[y][x - 3 + i] for i in range(4)] == search:
-                logger.info('Found horizontal match going right: (%d, %d)', y, x - 3)
-                matches += 1
-            if [arr[y][x - i] for i in range(4)] == search:
-                logger.info('Found horizontal match going left: (%d, %d)', y, x)
-                matches += 1
-
-    for x in range(width):
-        for y in range(3, height):
-            if [arr[y - 3 + i][x] for i in range(4)] == search:
-                logger.info('Found vertical match going down: (%d, %d)', y - 3, x)
-                matches += 1
-            if [arr[y - i][x] for i in range(4)] == search:
-                logger.info('Found vertical match going up: (%d, %d)', y, x)
-                matches += 1
-
-    for x in range(3, width):
-        for y in range(3, height):
-            if [arr[y - 3 + i][x - 3 + i] for i in range(4)] == search:
-                logger.info('Found diagonal match going bottom right: (%d, %d)', y - 3, x - 3)
-                matches += 1
-            if [arr[y - i][x - i] for i in range(4)] == search:
-                logger.info('Found diagonal match going top left: (%d, %d)', y, x)
-                matches += 1
-            if [arr[y - 3 + i][x - i] for i in range(4)] == search:
-                logger.info('Found diagonal match going bottom left: (%d, %d)', y - 3, x)
-                matches += 1
-            if [arr[y - i][x - 3 + i] for i in range(4)] == search:
-                logger.info('Found diagonal match going top right: (%d, %d)', y, x - 3)
-                matches += 1
-
-    return matches
+    return wordsearch(load_array(test), 'XMAS')
 
 
 def part_2(test: bool = False) -> int:
     """Search for two MAS in the shape of an X."""
-    arr = load_array(test)
-    check = set('MS')
-    matches = 0
-    for y, x in zip(*np.where(arr[1:-1,1:-1] == 'A')):
-        if {arr[y][x], arr[y+2][x+2]} == {arr[y+2][x], arr[y][x+2]} == check:
-            logger.info('Found X match: (%d, %d)', y, x)
-            matches += 1
-    return matches
+    return xsearch(load_array(test), 'MAS')
 
 
 def test_part_1() -> None:
