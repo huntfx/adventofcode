@@ -1,3 +1,7 @@
+"""Day 5: Print Queue
+https://adventofcode.com/2024/day/5
+"""
+
 from collections import defaultdict
 from typing import Dict, Iterator, List, Set, Tuple
 
@@ -52,9 +56,6 @@ def part_1(test: bool = False) -> int:
     """Count the middle pages of valid inputs."""
     ordering, updates = parse_input(test)
     valid = [update for update in updates if verify_update(ordering, update)]
-    if test:
-        print(ordering)
-        print(valid)
     return sum(update[len(update) // 2] for update in valid)
 
 
@@ -76,7 +77,7 @@ def part_2(test: bool = False) -> int:
                 # If the current page is not valid, swap it with the previous page
                 valid_pages = ordering[current_page]
                 if previous_page not in valid_pages:
-                    update = update[:max(0, i - 1)] + [current_page, previous_page] + update[i + 1:]
+                    update = update[:i - 1] + [current_page, previous_page] + update[i + 1:]
                     break
             else:
                 break
