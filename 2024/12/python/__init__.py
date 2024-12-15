@@ -92,41 +92,30 @@ def iter_plant_details(garden: np.ndarray, plant: str) -> Iterator[tuple[int, in
         area += np.sum(plant_region)
 
         # Get the perimeter and all the edges
-        edges = set()
+        edge_groups = [defaultdict(set) for _ in range(2)]
         for current in zip(*np.where(plant_region)):
             for direction in DIRECTIONS:
                 neighbour = (current[0] + direction[0], current[1] + direction[1])
 
-                # Check if the edge of a shape
-                if not index_valid(plant_region, neighbour) or not plant_region[neighbour]:
-                    perimeter += 1
-                    edges.add((current, neighbour))
+                # Skip if within the same region
+                if index_valid(plant_region, neighbour) and plant_region[neighbour]:
+                    continue
 
-        # Sort the pairs of edges per line
-        horizontal_edges = defaultdict(set)
-        vertical_edges = defaultdict(set)
-        for start, end in sorted(edges):
-            if start[0] == end[0]:
-                vertical_edges[start[0]].add((start[1], end[1]))
-            if start[1] == end[1]:
-                horizontal_edges[start[1]].add((start[0], end[0]))
+                # An edge was detected so add to the perimeter
+                perimeter += 1
+
+                # Record edge in groups of horizontal / vertical
+                for i, edges in enumerate(edge_groups):
+                    if current[i] == neighbour[i]:
+                        edges[current[i]].add((current[not i], neighbour[not i]))
 
         # Calculate which edges are contiguous
-        for edge in (horizontal_edges, vertical_edges):
-            existing_pairs: set[tuple[int, int]] = set()
-            for _, pairs in sorted(edge.items()):
-
-                # An existing side has finished
-                for pair in existing_pairs - pairs:
-                    existing_pairs.discard(pair)
-                    sides += 1
-
-                # A new side has started
-                for pair in pairs - existing_pairs:
-                    existing_pairs.add(pair)
-
-            # Apply the remaining sides and reset
-            sides += len(existing_pairs)
+        for edge_group in edge_groups:
+            current_pairs: set[tuple[int, int]] = set()
+            for _, side_pairs in sorted(edge_group.items()):
+                current_pairs &= side_pairs
+                sides += len(side_pairs - current_pairs)
+                current_pairs |= side_pairs
 
         yield area, perimeter, sides
 
